@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KnitPetal — Body Shaping Calculator</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+  <style>
+    /* ─── Design tokens ──────────────────────────────────────────── */
+    :root {
+      --bg:           #F8F7F8;
+      --surface:      #FFFFFF;
+      --surface-soft: #FAFAFA;
+      --border:       #E8E4E6;
+      --border-mid:   #D4CED1;
+      --text:         #1A1A1E;
+      --text-mid:     #5C5860;
+      --text-soft:    #9B96A0;
+      --pink:         #C07A94;
+      --pink-pale:    #FDF0F5;
+      --pink-border:  #E8C0D0;
+      --error-bg:     #FDF2F2;
+      --error-border: #F0BCBC;
+      --error-text:   #8B2020;
+      --radius-sm:    8px;
+      --radius-md:    14px;
+      --radius-lg:    20px;
+      --shadow-sm:    0 1px 2px rgba(26,26,30,0.04), 0 2px 8px rgba(26,26,30,0.04);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ─── Header ─────────────────────────────────────────────────── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 22px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .header-brand { display: flex; align-items: baseline; gap: 10px; }
+
+    .header-brand h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+
+    .header-brand h1 em { color: var(--pink); font-style: italic; }
+
+    .header-tagline { font-size: 12px; color: var(--text-soft); }
+
+    .header-badge {
+      font-size: 11px;
+      color: var(--text-soft);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 12px;
+      white-space: nowrap;
+    }
+
+    /* ─── Two-column layout ──────────────────────────────────────── */
+    .page-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 540px) minmax(0, 1fr);
+      min-height: calc(100vh - 70px);
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .left-col {
+      background: var(--bg);
+      border-right: 1px solid var(--border);
+      padding: 32px 32px 80px;
+    }
+
+    .right-col {
+      background: var(--surface);
+      padding: 24px 28px 60px;
+      overflow-y: auto;
+    }
+
+    /* ─── Cards ──────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      padding: 18px 20px 16px;
+      margin-bottom: 14px;
+    }
+
+    /* ─── Section labels ─────────────────────────────────────────── */
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .step-num {
+      min-width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 1px solid var(--border-mid);
+      color: var(--text-soft);
+      font-size: 11px;
+      font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .section-label h2 {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    /* ─── Helper note ────────────────────────────────────────────── */
+    .helper-note {
+      font-size: 12px;
+      color: var(--text-mid);
+      line-height: 1.6;
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 9px 11px;
+      margin-bottom: 14px;
+    }
+
+    /* ─── Form grids ─────────────────────────────────────────────── */
+    .two-col   { display: grid; grid-template-columns: 1fr 1fr;     gap: 10px; margin-bottom: 10px; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+
+    .meas-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 18px;
+      margin-bottom: 16px;
+    }
+
+    .meas-grid .field { gap: 6px; }
+
+    @media (max-width: 380px) { .two-col, .three-col, .meas-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 560px) { .three-col { grid-template-columns: 1fr 1fr; } }
+
+    /* ─── Fields ─────────────────────────────────────────────────── */
+    .field { display: flex; flex-direction: column; gap: 4px; }
+
+    label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-mid);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    /* ─── Number stepper component ───────────────────────────────── */
+    .stepper-wrap {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      height: 36px;
+    }
+
+    .stepper-wrap:focus-within {
+      border-color: var(--pink-border);
+      box-shadow: 0 0 0 3px rgba(192,122,148,0.10);
+    }
+
+    .stepper-wrap.error-wrap {
+      border-color: var(--error-border);
+      background: var(--error-bg);
+    }
+
+    .stepper-wrap.error-wrap:focus-within {
+      border-color: var(--error-border);
+      box-shadow: 0 0 0 3px rgba(240,188,188,0.18);
+    }
+
+    .stepper-btn {
+      flex-shrink: 0;
+      width: 32px;
+      height: 100%;
+      border: none;
+      background: transparent;
+      color: var(--border-mid);
+      font-size: 18px;
+      font-weight: 300;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s;
+      user-select: none;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .stepper-btn:hover  { color: var(--pink); }
+    .stepper-btn:active { color: var(--pink); opacity: 0.65; }
+
+    /* value + unit grouped, left-aligned */
+    .stepper-value-group {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 3px;
+      min-width: 0;
+      padding-left: 2px;
+    }
+
+    .stepper-wrap input[type="number"] {
+      min-width: 0;
+      width: 100%;
+      padding: 0;
+      border: none;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      background: transparent;
+      text-align: left;
+      -moz-appearance: textfield;
+    }
+
+    .stepper-wrap input[type="number"]::-webkit-outer-spin-button,
+    .stepper-wrap input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .stepper-wrap input[type="number"]:focus { outline: none; }
+
+    /* italic unit label — "in", "sts", etc. */
+    .stepper-unit {
+      font-size: 11px;
+      color: var(--text-soft);
+      font-style: italic;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+    }
+
+    .field-hint { font-size: 11px; color: var(--text-soft); margin-top: 1px; }
+
+    .long-sleeve-only { margin-top: 10px; }
+
+    /* ─── Ease note ──────────────────────────────────────────────── */
+    .ease-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .ease-chip {
+      background: var(--pink-pale);
+      color: var(--pink);
+      border: 1px solid var(--pink-border);
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* ─── Tooltip ────────────────────────────────────────────────── */
+    .tooltip-wrap {
+      position: relative;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .tooltip-trigger {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 1px solid var(--border-mid);
+      background: var(--surface);
+      color: var(--text-soft);
+      font-size: 10px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.15s, color 0.15s;
+      padding: 0; line-height: 1;
+    }
+
+    .tooltip-trigger:hover { border-color: var(--pink); color: var(--pink); }
+
+    .tooltip-panel {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      width: 220px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: 0 8px 24px rgba(26,26,30,0.12);
+      padding: 12px;
+      z-index: 200;
+    }
+
+    .tooltip-wrap:hover .tooltip-panel { display: block; }
+
+    .tooltip-img {
+      width: 100%; height: 90px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      background: var(--bg);
+      display: block;
+    }
+
+    .tooltip-text { font-size: 11px; color: var(--text-mid); line-height: 1.55; }
+    .section-label .tooltip-wrap { margin-left: auto; }
+
+    /* ─── Neckline style row ─────────────────────────────────────── */
+    .neckline-style-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .neckline-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--pink-pale);
+      color: var(--pink);
+      border: 1px solid var(--pink-border);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      width: fit-content;
+    }
+
+    .neckline-note {
+      font-size: 11px;
+      color: var(--text-soft);
+      line-height: 1.55;
+    }
+
+    /* ─── Sleeve toggle ──────────────────────────────────────────── */
+    .sleeve-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      padding: 14px 18px;
+      margin-bottom: 14px;
+    }
+
+    .sleeve-card-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin-bottom: 8px;
+    }
+
+    .sleeve-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px;
+    }
+
+    .sleeve-btn {
+      padding: 8px 12px;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-soft);
+      cursor: pointer;
+      border-radius: 999px;
+      transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .sleeve-btn:hover { background: rgba(255,255,255,0.7); color: var(--text-mid); }
+
+    .sleeve-btn.active {
+      background: var(--surface);
+      color: var(--pink);
+      box-shadow: 0 1px 4px rgba(192,122,148,0.13), 0 0 0 1px var(--pink-border);
+    }
+
+    /* ─── Calculate button ───────────────────────────────────────── */
+    .btn-calculate {
+      width: 100%;
+      padding: 13px;
+      background: var(--text);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      margin-top: 4px;
+    }
+
+    .btn-calculate:hover  { opacity: 0.85; }
+    .btn-calculate:active { transform: scale(0.99); }
+
+    /* ─── Error banner ───────────────────────────────────────────── */
+    .error-banner {
+      display: none;
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      border-radius: var(--radius-sm);
+      padding: 10px 13px;
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--error-text);
+      line-height: 1.6;
+    }
+
+    .error-banner strong { font-weight: 600; }
+
+    /* ─── Right column — Preview ─────────────────────────────────── */
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .preview-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+    }
+
+    .preview-badge {
+      font-size: 11px;
+      color: var(--pink);
+      background: var(--pink-pale);
+      border: 1px solid var(--pink-border);
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-weight: 500;
+    }
+
+    .preview-img-wrap {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--surface-soft);
+      height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .preview-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-soft);
+      pointer-events: none;
+    }
+
+    .preview-placeholder-icon  { font-size: 34px; opacity: 0.2; }
+    .preview-placeholder-label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.4; }
+
+    .preview-img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+      transition: opacity 0.2s;
+    }
+
+    /* ─── Pattern output ─────────────────────────────────────────── */
+    .pattern-output-wrap { display: none; }
+    .pattern-output-wrap.visible { display: block; }
+
+    .output-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin-bottom: 14px;
+    }
+
+    /* Gauge pills */
+    .gauge-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .gauge-pill {
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 11px;
+      text-align: center;
+    }
+
+    .gauge-pill .pill-label { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-soft); margin-bottom: 3px; }
+    .gauge-pill .pill-val   { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.1; }
+    .gauge-pill .pill-unit  { font-size: 10px; color: var(--text-soft); margin-top: 1px; }
+
+    /* Output group labels */
+    .output-group-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin: 16px 0 7px;
+    }
+
+    /* Number box grids */
+    .ng-2 { display: grid; grid-template-columns: 1fr 1fr;         gap: 7px; margin-bottom: 4px; }
+    .ng-3 { display: grid; grid-template-columns: repeat(3, 1fr);  gap: 7px; margin-bottom: 4px; }
+    .ng-4 { display: grid; grid-template-columns: repeat(4, 1fr);  gap: 7px; margin-bottom: 4px; }
+    .ng-5 { display: grid; grid-template-columns: repeat(5, 1fr);  gap: 7px; margin-bottom: 4px; }
+
+    @media (max-width: 780px) {
+      .ng-3, .ng-4, .ng-5 { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .num-box {
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--pink-border);
+      border-radius: var(--radius-sm);
+      padding: 10px 9px 8px;
+    }
+
+    .num-box.accent { border-left-color: var(--pink); }
+
+    .nb-label { font-size: 9px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-soft); margin-bottom: 3px; }
+    .nb-val   { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; margin-bottom: 2px; }
+    .nb-sub   { font-size: 10px; color: var(--text-soft); }
+
+    .num-box .nb-val.muted { color: var(--text-soft); font-size: 16px; }
+    .nb-val--note { font-size: 13px !important; color: var(--text-mid) !important; font-weight: 600; line-height: 1.3; padding-top: 2px; }
+
+    /* Pattern tabs */
+    .pattern-tabs {
+      display: flex;
+      gap: 6px;
+      margin: 20px 0 12px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      padding: 6px 13px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-mid);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tab-btn:hover { border-color: var(--border-mid); color: var(--text); }
+
+    .tab-btn.active {
+      background: var(--pink-pale);
+      color: var(--pink);
+      border-color: var(--pink-border);
+    }
+
+    /* Pattern cards */
+    .pattern-card {
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px 16px;
+    }
+
+    .pattern-card-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Pattern steps */
+    .p-step {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 11px;
+      align-items: flex-start;
+    }
+
+    .p-step:last-child { margin-bottom: 0; }
+
+    .p-num {
+      flex-shrink: 0;
+      min-width: 19px; height: 19px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 1px;
+    }
+
+    .p-body { flex: 1; }
+    .p-text { font-size: 13px; line-height: 1.65; color: var(--text); }
+    .p-text strong { font-weight: 700; }
+    .p-note { font-size: 11px; color: var(--text-mid); margin-top: 3px; line-height: 1.5; font-style: italic; }
+
+    /* Assumption tag */
+    .assumption-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--pink);
+      background: var(--pink-pale);
+      border: 1px solid var(--pink-border);
+      border-radius: 999px;
+      padding: 1px 7px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* Calc log */
+    .details-wrap {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-top: 18px;
+    }
+
+    details summary {
+      padding: 10px 13px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-mid);
+      background: var(--surface-soft);
+      list-style: none;
+      display: flex; align-items: center; gap: 8px;
+      user-select: none;
+    }
+
+    details summary::-webkit-details-marker { display: none; }
+    details summary::after { content: '›'; margin-left: auto; font-size: 16px; transition: transform 0.18s; }
+    details[open] summary::after { transform: rotate(90deg); }
+
+    .calc-log {
+      padding: 12px 14px;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+      font-size: 11px;
+      line-height: 2;
+      color: var(--text-mid);
+      background: var(--surface);
+    }
+
+    .log-line { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+    .log-key  { color: var(--text-soft); }
+    .log-val  { color: var(--text); font-weight: 600; white-space: nowrap; }
+    .log-head { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-soft); margin: 8px 0 4px; }
+    .log-div  { border: none; border-top: 1px dashed var(--border); margin: 4px 0; }
+
+    /* PDF button */
+    .btn-download-pdf {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 18px;
+      padding: 10px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-md);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-mid);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    .btn-download-pdf:hover {
+      border-color: var(--pink-border);
+      color: var(--pink);
+      background: var(--pink-pale);
+    }
+
+    /* Empty state */
+    .output-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 180px;
+      gap: 10px;
+      color: var(--text-soft);
+      text-align: center;
+    }
+
+    .output-empty-icon { font-size: 30px; opacity: 0.2; }
+    .output-empty-text { font-size: 13px; line-height: 1.5; opacity: 0.55; }
+
+    /* ─── Continuous pattern sections ───────────────────────────── */
+    .full-pattern { display: flex; flex-direction: column; gap: 12px; }
+
+    .pattern-section {
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px 16px;
+    }
+
+    .pattern-section-heading {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--pink);
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ─── Footer ─────────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 22px 20px;
+      font-size: 11px;
+      color: var(--text-soft);
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    /* ─── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 860px) {
+      header { padding: 16px 20px; flex-wrap: wrap; }
+      .page-layout { grid-template-columns: 1fr; }
+      .left-col  { border-right: none; border-bottom: 1px solid var(--border); padding: 22px 20px 36px; }
+      .right-col { padding: 18px 18px 36px; }
+      .preview-img-wrap { height: 200px; }
+    }
+
+    /* ─── Print / PDF ────────────────────────────────────────────── */
+    @media print {
+      header, .left-col, .preview-img-wrap, .preview-header,
+      .btn-download-pdf, .details-wrap, footer,
+      .output-empty, .output-section-title { display: none !important; }
+
+      body, .page-layout, .right-col { background: white !important; }
+      .page-layout  { display: block; }
+      .right-col    { padding: 0; max-width: 680px; margin: 0 auto; }
+      .pattern-output-wrap { display: block !important; }
+      .pattern-section { border: 1px solid #ddd; box-shadow: none; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
+<header>
+  <div class="header-brand">
+    <h1>Knit<em>Petal</em></h1>
+    <span class="header-tagline">LK 150 Machine Knit Top Pattern</span>
+  </div>
+  <div class="header-badge">Tinay Yernazarova</div>
+</header>
+
+
+<div class="page-layout">
+
+  <!-- ══════════ LEFT — Inputs ══════════ -->
+  <div class="left-col">
+
+    <!-- Sleeve toggle: Short left, Long right -->
+    <div class="sleeve-card">
+      <p class="sleeve-card-label">Sleeve style</p>
+      <div class="sleeve-toggle">
+        <button class="sleeve-btn active" data-style="short" type="button">Short sleeve</button>
+        <button class="sleeve-btn"        data-style="long"  type="button">Long sleeve</button>
+      </div>
+    </div>
+
+
+    <!-- Step 1 — Gauge swatch -->
+    <section class="card">
+      <div class="section-label">
+        <div class="step-num">1</div>
+        <h2>Gauge swatch</h2>
+        <div class="tooltip-wrap">
+          <button class="tooltip-trigger" type="button" aria-label="Help: gauge swatch">?</button>
+          <div class="tooltip-panel" role="tooltip">
+            <img src="images/stockinette-swatch.jpg" alt="Swatch example" class="tooltip-img" />
+            <p class="tooltip-text">Knit a flat swatch in your main stitch pattern. Measure stitches and rows carefully after the swatch has rested.</p>
+          </div>
+        </div>
+      </div>
+      <div class="helper-note">
+        Knit one flat swatch. Count stitches and rows, then measure its exact width and length (inches) after it has relaxed.
+      </div>
+      <div class="two-col">
+        <div class="field"
+             x-data="numStepper({ id: 'st-stitches', value: 20, min: 1, step: 1, unit: '' })">
+          <label for="st-stitches">Stitch count</label>
+          <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
+            <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
+            <div class="stepper-value-group">
+              <input type="number" id="st-stitches" x-model.number="value" :min="min" :step="step" />
+            </div>
+            <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
+          </div>
+        </div>
+        <div class="field"
+             x-data="numStepper({ id: 'st-swatch-width', value: 4, min: 0.1, step: 0.25, unit: 'in' })">
+          <label for="st-swatch-width">Swatch width</label>
+          <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
+            <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
+            <div class="stepper-value-group">
+              <input type="number" id="st-swatch-width" x-model.number="value" :min="min" :step="step" />
+              <span class="stepper-unit">in</span>
+            </div>
+            <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="field"
+             x-data="numStepper({ id: 'st-rows', value: 25, min: 1, step: 1, unit: '' })">
+          <label for="st-rows">Row count</label>
+          <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
+            <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
+            <div class="stepper-value-group">
+              <input type="number" id="st-rows" x-model.number="value" :min="min" :step="step" />
+            </div>
+            <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
+          </div>
+        </div>
+        <div class="field"
+             x-data="numStepper({ id: 'st-swatch-length', value: 4, min: 0.1, step: 0.25, unit: 'in' })">
+          <label for="st-swatch-length">Swatch length</label>
+          <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
+            <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
+            <div class="stepper-value-group">
+              <input type="number" id="st-swatch-length" x-model.number="value" :min="min" :step="step" />
+              <span class="stepper-unit">in</span>
+            </div>
+            <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 2 — Body measurements -->
+    <section class="card">
+      <div class="section-label">
+        <div class="step-num">2</div>
+        <h2>Body measurements</h2>
+        <div class="tooltip-wrap">
+          <button class="tooltip-trigger" type="button" aria-label="Help: body measurements">?</button>
+          <div class="tooltip-panel" role="tooltip">
+            <img src="images/body-measurements.jpg" alt="Body measurement guide" class="tooltip-img" />
+            <p class="tooltip-text">Measure snugly but not tightly, in inches. Hold the tape straight for vertical measurements.</p>
+          </div>
+        </div>
+      </div>
+      <div class="helper-note">
+        All measurements in <strong>inches</strong>. Circumferences: measure snugly. Lengths: hold the tape straight, not following the body's curve.
+      </div>
+
+      <div class="meas-grid">
+        <div class="field"
+             x-data="numStepper({ id: 'waist', value: 27, min: 10, step: 0.25, unit: 'in' })">
+          <label for="waist">Waist circumference</label>
+          <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
+            <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
+            <div class="stepper-value-group">
+              <input type="number" id="waist" x-model.number="value" :min="min" :step="step" />
+              <span class="stepper-unit">in</span>
+            </div>
+            <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
+          </div>
+        </div>
+        <div class="field"
+             x-data="numStepper({ id: 'bust', value: 32, min: 10, step: 0.25, unit: 'in' })">
+          <label for="bust">Bust circumference</label>
+          <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
+            <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
+            <div class="stepper-value-group">
+              <input type="number" id="bust" x-model.number="value" :min="min" :step="step" />
+              <span class="stepper-unit">in</span>
+            </div>
+            <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="meas-grid">
+        <div class="field"
+             x-data="numStepper({ id: 'waist-underbust', value: 5, min: 0.5, step: 0.25 })">
+          <label for="waist-underbust">Cast to underbust</label>
+          <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
+            <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
+            <div class="stepper-divider"></div>
+            <input type="number" id="waist-underbust" x-model.number="value" :min="min" :step="step" />
+            <div class="stepper-divider"></div>
+            <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
+          </div>
+        </div>
+        <div class="field"
+             x-data="numStepper({ id: 'underbust-shoulder', value: 10, min: 0.5, step: 0.25 })">
+          <label for="underbust-shoulder">Underbust to shoulder</label>
+          <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
+            <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
+            <div class="stepper-divider"></div>
+            <input type="number" id="underbust-shoulder" x-model.number="value" :min="min" :step="step" />
+            <div class="stepper-divider"></div>
+            <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="meas-grid">
+        <div class="field"
+             x-data="numStepper({ id: 'underbust-bust', value: 4, min: 0.5, step: 0.25 })">
+          <label for="underbust-bust">Underbust to top of bust</label>
+          <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
+            <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
+            <div class="stepper-divider"></div>
+            <input type="number" id="underbust-bust" x-model.number="value" :min="min" :step="step" />
+            <div class="stepper-divider"></div>
+            <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
+          </div>
+        </div>
+        <div class="field"
+             x-data="numStepper({ id: 'bicep', value: 13, min: 5, step: 0.25 })">
+          <label for="bicep">Bicep circumference</label>
+          <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
+            <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
+            <div class="stepper-divider"></div>
+            <input type="number" id="bicep" x-model.number="value" :min="min" :step="step" />
+            <div class="stepper-divider"></div>
+            <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arm length — only shown when long sleeve is active -->
+      <div class="long-sleeve-only" id="arm-length-wrap" style="display:none;">
+        <div class="field"
+             x-data="numStepper({ id: 'arm-length', value: 24, min: 1, step: 0.25 })">
+          <label for="arm-length">Arm length</label>
+          <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
+            <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
+            <div class="stepper-divider"></div>
+            <input type="number" id="arm-length" x-model.number="value" :min="min" :step="step" />
+            <div class="stepper-divider"></div>
+            <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
+          </div>
+          <span class="field-hint">top of arm to wrist (long sleeve only, in)</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Calculate -->
+    <button class="btn-calculate" id="calc-btn">Calculate pattern →</button>
+    <div class="error-banner" id="error-banner"></div>
+
+  </div><!-- /left-col -->
+
+
+  <!-- ══════════ RIGHT — Output ══════════ -->
+  <div class="right-col">
+
+    <!-- Preview image -->
+    <div class="preview-header">
+      <span class="preview-title">Garment preview</span>
+      <span class="preview-badge" id="preview-badge">Short sleeve</span>
+    </div>
+
+    <div class="preview-img-wrap">
+      <div class="preview-placeholder">
+        <div class="preview-placeholder-icon">🧶</div>
+        <div class="preview-placeholder-label" id="preview-placeholder-label">Short sleeve</div>
+      </div>
+      <img
+        id="preview-img"
+        src="images/short-sleeve-placeholder.jpg"
+        alt="Short sleeve garment preview"
+        class="preview-img"
+        style="opacity:0"
+        onerror="this.style.opacity='0'"
+        onload="this.style.opacity='1'"
+      />
+    </div>
+
+    <!-- Pattern output (hidden until calculated) -->
+    <div class="pattern-output-wrap" id="pattern-output-wrap">
+
+      <p class="output-section-title">Generated pattern</p>
+
+      <div class="full-pattern">
+
+        <div class="pattern-section">
+          <div class="pattern-section-heading">Back panel</div>
+          <div id="back-steps"></div>
+        </div>
+
+        <div class="pattern-section">
+          <div class="pattern-section-heading">Front panel</div>
+          <div id="front-steps"></div>
+        </div>
+
+        <div class="pattern-section">
+          <div class="pattern-section-heading">Shoulder seaming</div>
+          <div id="shoulder-steps"></div>
+        </div>
+
+        <div class="pattern-section">
+          <div class="pattern-section-heading">Neckline</div>
+          <div id="neckline-steps"></div>
+        </div>
+
+        <div class="pattern-section">
+          <div class="pattern-section-heading" id="sleeve-section-heading">Sleeves</div>
+          <div id="sleeve-steps"></div>
+        </div>
+
+        <div class="pattern-section">
+          <div class="pattern-section-heading">Finishing</div>
+          <div id="finishing-steps"></div>
+        </div>
+
+      </div><!-- /full-pattern -->
+
+      <!-- Calc log -->
+      <div class="details-wrap">
+        <details>
+          <summary>Show calculation log</summary>
+          <div class="calc-log" id="calc-log"></div>
+        </details>
+      </div>
+
+      <!-- PDF download -->
+      <button class="btn-download-pdf" id="btn-pdf" type="button">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 2v8M5 7l3 3 3-3"/><rect x="2" y="11" width="12" height="3" rx="1"/>
+        </svg>
+        Download pattern as PDF
+      </button>
+
+    </div><!-- /pattern-output-wrap -->
+
+    <!-- Empty state -->
+    <div class="output-empty" id="output-empty">
+      <div class="output-empty-icon">✦</div>
+      <div class="output-empty-text">Fill in your swatch and measurements,<br>then click <strong>Calculate pattern</strong></div>
+    </div>
+
+  </div><!-- /right-col -->
+
+</div><!-- /page-layout -->
+
+<footer>
+  KnitPetal — free tool for the machine knitting community. Verify all outputs against your swatch before knitting.
+</footer>
+
+
+<script>
+  /* ── Alpine.js: numStepper component ──────────────────────────── */
+  document.addEventListener('alpine:init', () => {
+    Alpine.data('numStepper', ({ id, value, min = 0, step = 1, max = Infinity, unit = '' }) => ({
+      value,
+      min,
+      step,
+      max,
+      unit,
+      hasError: false,
+
+      increment() {
+        const next = Math.round((+this.value + this.step) * 10000) / 10000;
+        this.value = Math.min(this.max, next);
+      },
+
+      decrement() {
+        const next = Math.round((+this.value - this.step) * 10000) / 10000;
+        this.value = Math.max(this.min, next);
+      },
+
+      /* Called by markErr / clearErrors via DOM */
+      setError(state) { this.hasError = state; }
+    }));
+  });
+
+  /* ═══════════════════════════════════════════════════════════════
+   *  KnitPetal — Body Shaping + Sleeve Calculator
+   * ═══════════════════════════════════════════════════════════════ */
+
+  let calcResults = null;
+
+  /* ── Helpers ───────────────────────────────────────────────────── */
+  const getVal = id => parseFloat(document.getElementById(id).value);
+
+  function markErr(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('error');
+    /* Tell the Alpine stepper component to show error styling */
+    const wrap = el.closest('[x-data]');
+    if (wrap && wrap._x_dataStack) {
+      wrap._x_dataStack[0].hasError = true;
+    }
+  }
+
+  function clearErrors() {
+    document.querySelectorAll('input[type="number"]').forEach(el => el.classList.remove('error'));
+    document.querySelectorAll('[x-data]').forEach(wrap => {
+      if (wrap._x_dataStack && wrap._x_dataStack[0] && 'hasError' in wrap._x_dataStack[0]) {
+        wrap._x_dataStack[0].hasError = false;
+      }
+    });
+  }
+
+  function buildSteps(steps) {
+    return steps.map((s, i) => `
+      <div class="p-step">
+        <div class="p-num">${i + 1}</div>
+        <div class="p-body">
+          <div class="p-text">${s.text}</div>
+          ${s.note ? `<div class="p-note">${s.note}</div>` : ''}
+        </div>
+      </div>`).join('');
+  }
+
+  /* ── Sleeve toggle ─────────────────────────────────────────────── */
+  const sleeveImages = {
+    short: { src: 'images/short-sleeve-placeholder.jpg', label: 'Short sleeve' },
+    long:  { src: 'images/long-sleeve-placeholder.jpg',  label: 'Long sleeve'  },
+  };
+
+  document.querySelectorAll('.sleeve-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.sleeve-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+
+      const style = this.dataset.style;
+      const d = sleeveImages[style];
+
+      const img = document.getElementById('preview-img');
+      img.style.opacity = '0';
+      img.src = d.src;
+      document.getElementById('preview-badge').textContent             = d.label;
+      document.getElementById('preview-placeholder-label').textContent = d.label;
+
+      document.getElementById('arm-length-wrap').style.display = style === 'long' ? 'block' : 'none';
+
+      if (calcResults) {
+        renderSleeveOutput(calcResults, style);
+      }
+    });
+  });
+
+  /* ── PDF ───────────────────────────────────────────────────────── */
+  document.getElementById('btn-pdf').addEventListener('click', () => window.print());
+
+  /* ── Validation ────────────────────────────────────────────────── */
+  function validate() {
+    const errors = [];
+    clearErrors();
+
+    const required = [
+      ['st-stitches',       'Stitch count'],
+      ['st-swatch-width',   'Swatch width'],
+      ['st-rows',           'Row count'],
+      ['st-swatch-length',  'Swatch length'],
+      ['waist-underbust',   'R — Cast to underbust'],
+      ['underbust-shoulder','U — Underbust to shoulder'],
+      ['underbust-bust',    'F — Underbust to top of bust'],
+      ['bicep',             'G — Bicep circumference'],
+    ];
+
+    required.forEach(([id, label]) => {
+      const v = getVal(id);
+      if (isNaN(v) || v <= 0) { errors.push(`${label} must be a positive number.`); markErr(id); }
+    });
+
+    const C = getVal('waist');
+    if (isNaN(C) || C <= 2) {
+      errors.push('C (waist circumference) must be greater than 2 inches.'); markErr('waist');
+    }
+
+    const E = getVal('bust');
+    if (isNaN(E) || E <= 2) {
+      errors.push('E (bust circumference) must be greater than 2 inches.'); markErr('bust');
+    }
+
+    const F = getVal('underbust-bust'), U = getVal('underbust-shoulder');
+    if (!isNaN(F) && !isNaN(U) && F >= U) {
+      errors.push('F (underbust to top of bust) must be less than U (underbust to shoulder).');
+      markErr('underbust-bust'); markErr('underbust-shoulder');
+    }
+
+    const isLong = document.querySelector('.sleeve-btn.active').dataset.style === 'long';
+    if (isLong) {
+      const L = getVal('arm-length');
+      if (isNaN(L) || L <= 0) {
+        errors.push('L — Arm length is required for long sleeve.'); markErr('arm-length');
+      }
+    }
+
+    return errors;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   *  SLEEVE OUTPUT RENDERER
+   * ═══════════════════════════════════════════════════════════════ */
+  function renderSleeveOutput(r, sleeveStyle) {
+    const isLong = sleeveStyle === 'long';
+
+    const headingEl = document.getElementById('sleeve-section-heading');
+    if (headingEl) headingEl.textContent = isLong ? 'Long sleeves' : 'Short sleeves';
+
+    let sleeveSteps;
+
+    if (!isLong) {
+      sleeveSteps = [
+        {
+          text: `Pick up and hang <strong>${r.sleeve_sts} stitches</strong> around the armhole, skipping every 4th edge stitch.`,
+          note: `Pickup ratio: 3 stitches for every 4 edge stitches. Sleeve stitches: G (${r.G} in) × A1 (${r.A1.toFixed(2)} st/in) = ${r.sleeve_sts_raw.toFixed(2)}, rounded to nearest multiple of 4 = ${r.sleeve_sts} sts.`
+        },
+        { text: `Knit approximately <strong>10 cm</strong> (about 4 inches), or longer if preferred for your sleeve length.` },
+        { text: `Bind off all stitches.` },
+        { text: `Using the long tail left after binding off, seam the sleeve using an invisible seaming technique, starting from the lower edge of the sleeve and working up to the armpit.` },
+        { text: `Seam the side of the top from the armpit down to the hem, or from the hem up to the armpit — whichever you prefer.` },
+        { text: `Knot the seaming tails together at the armpit for stability before weaving them in.`, note: `Knotting the tails at the armpit prevents the seam from pulling open at that stress point.` }
+      ];
+    } else {
+      const rowsLabel = r.long_sleeve_rows !== null
+        ? `<strong>${r.long_sleeve_rows} rows</strong>`
+        : '<strong>the required number of rows</strong>';
+
+      sleeveSteps = [
+        {
+          text: `Pick up and hang <strong>${r.sleeve_sts} stitches</strong> around the armhole, skipping every 4th edge stitch.`,
+          note: `Pickup ratio: 3 stitches for every 4 edge stitches. Sleeve stitches: G (${r.G} in) × A1 (${r.A1.toFixed(2)} st/in) = ${r.sleeve_sts_raw.toFixed(2)}, rounded to nearest multiple of 4 = ${r.sleeve_sts} sts.`
+        },
+        {
+          text: `Knit for ${rowsLabel}, or until the desired sleeve length is reached.`,
+          note: r.long_sleeve_rows !== null
+            ? `Long sleeve rows: L (${r.L} in) × B1 (${r.B1.toFixed(2)} rows/in) = ${(r.L * r.B1).toFixed(2)}, rounded to ${r.long_sleeve_rows} rows.`
+            : 'Enter arm length (L) to calculate a precise row count.'
+        },
+        { text: `Bind off all stitches.` },
+        { text: `Using the long tail left after binding off, seam the sleeve using an invisible seaming technique, starting from the wrist edge and working up to the armpit.` },
+        { text: `Seam the side of the top from the armpit down to the hem, or from the hem up to the armpit — whichever you prefer.` },
+        { text: `Knot the seaming tails together at the armpit for stability before weaving them in.`, note: `Knotting the tails at the armpit prevents the seam from pulling open at that stress point.` }
+      ];
+    }
+
+    document.getElementById('sleeve-steps').innerHTML = buildSteps(sleeveSteps);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   *  MAIN CALCULATE
+   * ═══════════════════════════════════════════════════════════════ */
+  document.getElementById('calc-btn').addEventListener('click', function () {
+
+    const errors = validate();
+    const banner = document.getElementById('error-banner');
+
+    if (errors.length) {
+      banner.innerHTML = '<strong>Please fix the following:</strong><br>' + errors.join('<br>');
+      banner.style.display = 'block';
+      return;
+    }
+    banner.style.display = 'none';
+
+    const st_stitches = getVal('st-stitches');
+    const st_width    = getVal('st-swatch-width');
+    const st_rows     = getVal('st-rows');
+    const st_length   = getVal('st-swatch-length');
+    const C           = getVal('waist');
+    const E           = getVal('bust');
+    const R           = getVal('waist-underbust');
+    const U           = getVal('underbust-shoulder');
+    const F           = getVal('underbust-bust');
+    const G           = getVal('bicep');
+    const isLong      = document.querySelector('.sleeve-btn.active').dataset.style === 'long';
+    const L           = isLong ? getVal('arm-length') : null;
+
+    const A1 = st_stitches / st_width;
+    const B1 = st_rows     / st_length;
+
+    const cast_sts       = Math.round(((C - 2) * A1) / 2);
+    const upper_body_sts = Math.round(((E - 2) * A1) / 2);
+    const stitch_difference = upper_body_sts - cast_sts;
+
+    const adjusted_stitch_difference =
+      stitch_difference % 2 !== 0 ? stitch_difference + 1 : stitch_difference;
+
+    const increase_per_side           = adjusted_stitch_difference / 2;
+    const rows_used_for_bust_increases = increase_per_side * 2;
+
+    const cast_to_underbust_rows     = Math.round(R * B1);
+    const underbust_to_shoulder_rows = Math.round(U * B1);
+    const top_of_bust_row            = Math.round(F * B1);
+    const total_rows                 = cast_to_underbust_rows + underbust_to_shoulder_rows;
+    const neckline_rows              = Math.round(F * B1);
+
+    const remaining_straight_rows =
+      total_rows - cast_to_underbust_rows - rows_used_for_bust_increases;
+
+    const extra_rows_to_top_of_bust = top_of_bust_row - rows_used_for_bust_increases;
+
+    const sleeve_sts_raw  = G * A1;
+    const sleeve_sts      = Math.round(sleeve_sts_raw / 4) * 4;
+    const long_sleeve_rows = isLong && L !== null ? Math.round(L * B1) : null;
+
+    const postErrors = [];
+
+    if (remaining_straight_rows < 0) {
+      postErrors.push(
+        `Remaining straight rows is ${remaining_straight_rows} (negative). ` +
+        `The bust increase section (${rows_used_for_bust_increases} rows) exceeds the available upper body height. ` +
+        `Try increasing U, or check your gauge and measurements.`
+      );
+    }
+
+    if (sleeve_sts < 4) {
+      postErrors.push(`Sleeve stitch count is too small (${sleeve_sts}). Check your bicep measurement and gauge.`);
+    }
+
+    if (postErrors.length) {
+      banner.innerHTML = '<strong>Calculation problem:</strong><br>' + postErrors.join('<br>');
+      banner.style.display = 'block';
+      return;
+    }
+
+    calcResults = {
+      A1, B1, C, E, R, U, F, G, L,
+      cast_sts, upper_body_sts, stitch_difference,
+      adjusted_stitch_difference, increase_per_side,
+      rows_used_for_bust_increases,
+      cast_to_underbust_rows, underbust_to_shoulder_rows,
+      top_of_bust_row, total_rows,
+      remaining_straight_rows, extra_rows_to_top_of_bust,
+      sleeve_sts_raw, sleeve_sts, long_sleeve_rows,
+      neckline_rows,
+    };
+
+    /* ── Back panel ── */
+    let backSteps;
+
+    if (stitch_difference === 0) {
+      backSteps = [
+        { text: `Cast on <strong>${cast_sts} stitches</strong>. Knit 4–6 rows using waste yarn in a contrasting colour.`, note: `The waste yarn rows are removed later to expose a clean cast-on edge.` },
+        { text: `Knit 1 row with a smooth ravel cord to separate the waste yarn from your main project.` },
+        { text: `Switch to project yarn, set the machine to your desired tension, and knit <strong>${total_rows} rows</strong> straight to the shoulder.`, note: `No bust shaping is needed — waist and bust stitch counts are equal (${cast_sts} sts each). Total: ${cast_to_underbust_rows} rows (waist → underbust) + ${underbust_to_shoulder_rows} rows (underbust → shoulder) = ${total_rows} rows.` },
+        { text: `The back panel is complete. Leave stitches on hold or bind off depending on your chosen shoulder join method.` }
+      ];
+    } else {
+      const roundingNote = adjusted_stitch_difference !== stitch_difference
+        ? ` The raw stitch difference was ${stitch_difference} (odd) — automatically rounded up to ${adjusted_stitch_difference} to keep both sides even.`
+        : '';
+
+      backSteps = [
+        { text: `Cast on <strong>${cast_sts} stitches</strong>. Knit 4–6 rows using waste yarn in a contrasting colour.`, note: `The waste yarn rows are removed later to expose a clean cast-on edge.` },
+        { text: `Knit 1 row with a smooth ravel cord to separate the waste yarn from your main project.` },
+        { text: `Switch to project yarn, set the machine to your desired tension, and knit <strong>${cast_to_underbust_rows} rows</strong> straight.`, note: `This brings the piece from the waist up to the underbust. (R = ${R} in × B1 = ${B1.toFixed(2)} rows/in → ${cast_to_underbust_rows} rows.)` },
+        { text: `Increase for the bust by <strong>${adjusted_stitch_difference} stitches total</strong>, adding <strong>${increase_per_side} stitches on each side</strong>.`, note: `${roundingNote} Increase method and row spacing are at your discretion. <span class="assumption-tag">Assumption</span> This section uses approximately ${rows_used_for_bust_increases} rows (1 increase per side every 2 rows).` },
+        { text: `After the increase section is complete, knit <strong>${remaining_straight_rows} rows</strong> straight until the back panel reaches its full length.`, note: `Total: ${cast_to_underbust_rows} rows + ~${rows_used_for_bust_increases} increase rows + ${remaining_straight_rows} straight rows = ${total_rows} rows.` },
+        { text: `The back panel is complete. Leave stitches on hold or bind off depending on your chosen shoulder join method.` }
+      ];
+    }
+
+    document.getElementById('back-steps').innerHTML = buildSteps(backSteps);
+
+    /* ── Front panel ── */
+    const frontSteps = [];
+
+    frontSteps.push({ text: `Cast on <strong>${cast_sts} stitches</strong>. Knit 4–6 rows using waste yarn in a contrasting colour, then knit 1 row with a smooth ravel cord.`, note: `Same cast-on as the back panel.` });
+    frontSteps.push({ text: `Switch to project yarn, set the machine to your desired tension, and knit <strong>${cast_to_underbust_rows} rows</strong> straight.`, note: `Matches the back panel waist-to-underbust section.` });
+
+    if (stitch_difference === 0) {
+      frontSteps.push({ text: `No bust shaping is needed — waist and bust stitch counts are equal (${cast_sts} stitches). Continue straight.` });
+    } else {
+      const roundingNote = adjusted_stitch_difference !== stitch_difference
+        ? ` (Raw difference was ${stitch_difference} — automatically adjusted to ${adjusted_stitch_difference} for even increases.)`
+        : '';
+      frontSteps.push({ text: `Increase for the bust by <strong>${adjusted_stitch_difference} stitches total</strong>, adding <strong>${increase_per_side} stitches on each side</strong>.${roundingNote}`, note: `You now have ${upper_body_sts} stitches across. Matches the back panel shaping.` });
+    }
+
+    if (extra_rows_to_top_of_bust > 0) {
+      frontSteps.push({ text: `Knit <strong>${extra_rows_to_top_of_bust} rows</strong> straight to reach the top-of-bust position.`, note: `Top of bust: ${top_of_bust_row} rows from underbust. Increase section used ~${rows_used_for_bust_increases} rows. Remaining to top of bust: ${top_of_bust_row} − ${rows_used_for_bust_increases} = ${extra_rows_to_top_of_bust} rows.` });
+    }
+
+    frontSteps.push({ text: `Begin the strap section. Make each strap <strong>at least 15 stitches wide</strong>, or wider if preferred.`, note: `Strap width is a design choice — no fixed stitch count is required. The straps carry the front neckline.` });
+    frontSteps.push({ text: `Bind off the stitches between the straps for the neckline.` });
+    frontSteps.push({ text: `Knit one strap using waste yarn to hold it while you work the other side. If your carriage width allows you to knit one strap without touching the second strap, you do not need to place the second strap on waste yarn.`, note: `Use your machine's carriage range to decide. If both straps can be held without interference, leave the second strap on the needle.` });
+    frontSteps.push({ text: `Continue knitting the straps until the total length of the front panel reaches <strong>${total_rows} rows</strong>.`, note: `Total rows = ${total_rows} (matches the back panel length from cast edge to shoulder).` });
+
+    document.getElementById('front-steps').innerHTML = buildSteps(frontSteps);
+
+    /* ── Shoulder seaming ── */
+    document.getElementById('shoulder-steps').innerHTML = buildSteps([
+      { text: `Set the front panel on top of the back panel with wrong sides together.` },
+      { text: `Using the tails left from knitting, seam the front shoulder straps to the back panel using a horizontal invisible seaming technique.`, note: `Use stitch markers to align the straps evenly before seaming.` }
+    ]);
+
+    /* ── Neckline ── */
+    document.getElementById('neckline-steps').innerHTML = buildSteps([
+      { text: `On the knitting machine, cast on the same number of stitches as the neckline cast-off.`, note: `The neckline stitch count matches the stitches you bound off when opening the neckline — no new measurement is needed.` },
+      { text: `Knit <strong>${neckline_rows} rows</strong> flat.`, note: `Neckline band rows: F (${F} in) × B1 (${B1.toFixed(2)} rows/in) = ${(F * B1).toFixed(2)} → rounded to ${neckline_rows} rows.` },
+      { text: `Use a latch tool to create <strong>2×1 ribbing</strong> across all stitches.`, note: `Move every alternate stitch onto the adjacent needle to form the ribbed texture.` },
+      { text: `Bind off the neckline band.` },
+      { text: `Sew the finished neckline band to the neckline cast-off edge.`, note: `Pin the band in place before seaming to distribute it evenly around the neckline.` }
+    ]);
+
+    /* ── Sleeves ── */
+    const currentStyle = document.querySelector('.sleeve-btn.active').dataset.style;
+    renderSleeveOutput(calcResults, currentStyle);
+
+    /* ── Finishing ── */
+    document.getElementById('finishing-steps').innerHTML = buildSteps([
+      { text: `Weave in all remaining yarn tails securely on the wrong side.` },
+      { text: `Wash the finished garment gently by hand or on a delicate machine cycle according to your yarn's care instructions.` },
+      { text: `Block the garment flat to the finished dimensions and leave to dry completely before wearing.`, note: `Blocking evens out the stitches and helps the garment settle into its final shape.` }
+    ]);
+
+    /* ── Calculation log ── */
+    const log = [
+      { head: 'Gauge' },
+      { key: 'A1 = swatch stitches ÷ swatch width',                val: `${st_stitches} ÷ ${st_width} = ${A1.toFixed(4)} st/in` },
+      { key: 'B1 = swatch rows ÷ swatch length',                   val: `${st_rows} ÷ ${st_length} = ${B1.toFixed(4)} rows/in` },
+      { div: true },
+      { head: 'Stitch counts (per flat piece)' },
+      { key: 'cast_sts = ((C − 2) × A1) ÷ 2',                     val: `((${C} − 2) × ${A1.toFixed(4)}) ÷ 2 = ${(((C-2)*A1)/2).toFixed(4)} → ${cast_sts} sts` },
+      { key: 'upper_body_sts = ((E − 2) × A1) ÷ 2',               val: `((${E} − 2) × ${A1.toFixed(4)}) ÷ 2 = ${(((E-2)*A1)/2).toFixed(4)} → ${upper_body_sts} sts` },
+      { key: 'stitch_difference = upper_body_sts − cast_sts',      val: `${upper_body_sts} − ${cast_sts} = ${stitch_difference}` },
+      { div: true },
+      { head: 'Bust shaping (automatic even rounding)' },
+      { key: 'adjusted_stitch_difference',                          val: stitch_difference % 2 !== 0 ? `${stitch_difference} is odd → rounded up to ${adjusted_stitch_difference}` : `${stitch_difference} is even → no change` },
+      { key: 'increase_per_side = adjusted ÷ 2',                   val: `${adjusted_stitch_difference} ÷ 2 = ${increase_per_side} sts` },
+      { key: 'rows_used_for_bust_increases = increase_per_side × 2 [ASSUMPTION: 1 inc/side per 2 rows]', val: `${increase_per_side} × 2 = ${rows_used_for_bust_increases} rows` },
+      { div: true },
+      { head: 'Row counts' },
+      { key: 'cast_to_underbust_rows = R × B1',                    val: `${R} × ${B1.toFixed(4)} = ${(R*B1).toFixed(4)} → ${cast_to_underbust_rows} rows` },
+      { key: 'underbust_to_shoulder_rows = U × B1',                val: `${U} × ${B1.toFixed(4)} = ${(U*B1).toFixed(4)} → ${underbust_to_shoulder_rows} rows` },
+      { key: 'top_of_bust_row = F × B1',                           val: `${F} × ${B1.toFixed(4)} = ${(F*B1).toFixed(4)} → ${top_of_bust_row} rows` },
+      { key: 'total_rows = cast_to_underbust + underbust_to_shoulder', val: `${cast_to_underbust_rows} + ${underbust_to_shoulder_rows} = ${total_rows} rows` },
+      { key: 'remaining_straight_rows = total − waist_section − increase_section', val: `${total_rows} − ${cast_to_underbust_rows} − ${rows_used_for_bust_increases} = ${remaining_straight_rows} rows` },
+      { key: 'extra_rows_to_top_of_bust = top_of_bust_row − rows_used', val: `${top_of_bust_row} − ${rows_used_for_bust_increases} = ${extra_rows_to_top_of_bust}${extra_rows_to_top_of_bust <= 0 ? ' (no extra instruction needed)' : ''}` },
+      { div: true },
+      { head: 'Neckline finishing' },
+      { key: 'neckline_rows = F × B1',                             val: `${F} × ${B1.toFixed(4)} = ${(F*B1).toFixed(4)} → ${neckline_rows} rows` },
+      { key: 'neckline band sts',                                  val: `same as neckline cast-off` },
+      { div: true },
+      { head: 'Sleeves' },
+      { key: 'sleeve_sts_raw = G × A1',                            val: `${G} × ${A1.toFixed(4)} = ${sleeve_sts_raw.toFixed(4)}` },
+      { key: 'sleeve_sts = nearest multiple of 4',                 val: `Math.round(${sleeve_sts_raw.toFixed(4)} ÷ 4) × 4 = ${sleeve_sts} sts` },
+      ...(isLong && L !== null ? [{ key: 'long_sleeve_rows = L × B1', val: `${L} × ${B1.toFixed(4)} = ${(L*B1).toFixed(4)} → ${long_sleeve_rows} rows` }] : []),
+    ];
+
+    document.getElementById('calc-log').innerHTML = log.map(item => {
+      if (item.head) return `<div class="log-head">${item.head}</div>`;
+      if (item.div)  return `<hr class="log-div" />`;
+      return `<div class="log-line"><span class="log-key">${item.key}</span><span class="log-val">${item.val}</span></div>`;
+    }).join('');
+
+    document.getElementById('pattern-output-wrap').classList.add('visible');
+    document.getElementById('output-empty').style.display = 'none';
+
+    if (window.innerWidth <= 860) {
+      document.getElementById('pattern-output-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+</script>
+</body>
+</html>

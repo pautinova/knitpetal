@@ -143,12 +143,12 @@
     }
 
     /* ─── Form grids ─────────────────────────────────────────────── */
-    .two-col   { display: grid; grid-template-columns: 1fr 1fr;     gap: 10px; margin-bottom: 10px; }
-    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .two-col   { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr);                    gap: 10px; margin-bottom: 10px; }
+    .three-col { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);      gap: 10px; margin-bottom: 10px; }
 
     .meas-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr);
       gap: 14px 18px;
       margin-bottom: 16px;
     }
@@ -177,7 +177,8 @@
       border-radius: var(--radius-sm);
       background: var(--surface);
       transition: border-color 0.2s, box-shadow 0.2s;
-      height: 36px;
+      height: 34px;
+      width: 100%;
     }
 
     .stepper-wrap:focus-within {
@@ -217,20 +218,9 @@
     .stepper-btn:hover  { color: var(--pink); }
     .stepper-btn:active { color: var(--pink); opacity: 0.65; }
 
-    /* value + unit grouped, left-aligned */
-    .stepper-value-group {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 3px;
-      min-width: 0;
-      padding-left: 2px;
-    }
-
     .stepper-wrap input[type="number"] {
+      flex: 1;
       min-width: 0;
-      width: 100%;
       padding: 0;
       border: none;
       font-family: inherit;
@@ -238,7 +228,7 @@
       font-weight: 500;
       color: var(--text);
       background: transparent;
-      text-align: left;
+      text-align: center;
       -moz-appearance: textfield;
     }
 
@@ -280,6 +270,56 @@
       font-weight: 600;
     }
 
+    /* ─── Unit toggle (compact sliding pill) ────────────────────── */
+    .unit-toggle-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 12px;
+    }
+
+    .unit-toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 2px;
+    }
+
+    .unit-toggle-track {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: calc(50% - 2px);
+      height: calc(100% - 4px);
+      background: var(--surface);
+      border-radius: 999px;
+      box-shadow: 0 1px 4px rgba(192,122,148,0.10), 0 0 0 1px var(--pink-border);
+      transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+    }
+
+    .unit-toggle-track.cm { transform: translateX(100%); }
+
+    .unit-toggle-btn {
+      position: relative;
+      z-index: 1;
+      padding: 4px 12px;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-soft);
+      cursor: pointer;
+      border-radius: 999px;
+      transition: color 0.18s;
+      letter-spacing: 0.04em;
+    }
+
+    .unit-toggle-btn.active { color: var(--pink); }
+
     /* ─── Tooltip ────────────────────────────────────────────────── */
     .tooltip-wrap {
       position: relative;
@@ -305,11 +345,10 @@
     .tooltip-trigger:hover { border-color: var(--pink); color: var(--pink); }
 
     .tooltip-panel {
-      display: none;
       position: absolute;
       top: calc(100% + 6px);
       right: 0;
-      width: 220px;
+      width: 300px;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
@@ -318,11 +357,13 @@
       z-index: 200;
     }
 
-    .tooltip-wrap:hover .tooltip-panel { display: block; }
+    .tooltip-panel--lg { width: 360px; }
+
+    .tooltip-trigger.active { border-color: var(--pink); color: var(--pink); }
 
     .tooltip-img {
-      width: 100%; height: 90px;
-      object-fit: cover;
+      width: 100%;
+      height: auto;
       border-radius: var(--radius-sm);
       margin-bottom: 8px;
       background: var(--bg);
@@ -414,19 +455,20 @@
     .btn-calculate {
       width: 100%;
       padding: 13px;
-      background: var(--text);
-      color: #fff;
+      background: var(--surface);
+      color: var(--pink);
       border: none;
-      border-radius: var(--radius-md);
+      border-radius: 999px;
       font-family: inherit;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: opacity 0.15s, transform 0.1s;
+      box-shadow: 0 1px 4px rgba(192,122,148,0.18), 0 0 0 1px var(--pink-border);
+      transition: box-shadow 0.18s, transform 0.1s, background 0.18s;
       margin-top: 4px;
     }
 
-    .btn-calculate:hover  { opacity: 0.85; }
+    .btn-calculate:hover  { background: var(--pink-pale); box-shadow: 0 2px 8px rgba(192,122,148,0.22), 0 0 0 1px var(--pink-border); }
     .btn-calculate:active { transform: scale(0.99); }
 
     /* ─── Error banner ───────────────────────────────────────────── */
@@ -782,6 +824,9 @@
       .preview-img-wrap { height: 200px; }
     }
 
+    /* ─── Print banner (screen: hidden; print: visible) ─────────── */
+    .print-banner { display: none; }
+
     /* ─── Print / PDF ────────────────────────────────────────────── */
     @media print {
       header, .left-col, .preview-img-wrap, .preview-header,
@@ -793,6 +838,20 @@
       .right-col    { padding: 0; max-width: 680px; margin: 0 auto; }
       .pattern-output-wrap { display: block !important; }
       .pattern-section { border: 1px solid #ddd; box-shadow: none; break-inside: avoid; }
+
+      .print-banner {
+        display: block;
+        width: 100%;
+        margin-bottom: 20px;
+        break-inside: avoid;
+      }
+
+      .print-banner img {
+        width: 100%;
+        height: auto;
+        border-radius: 12px;
+        display: block;
+      }
     }
   </style>
 </head>
@@ -813,6 +872,15 @@
   <!-- ══════════ LEFT — Inputs ══════════ -->
   <div class="left-col">
 
+    <!-- Unit toggle — compact sliding pill -->
+    <div class="unit-toggle-row" x-data>
+      <div class="unit-toggle">
+        <div class="unit-toggle-track" :class="{ cm: $store.units.system === 'cm' }"></div>
+        <button class="unit-toggle-btn" :class="{ active: $store.units.system === 'in' }" @click="$store.units.setSystem('in')" type="button">in</button>
+        <button class="unit-toggle-btn" :class="{ active: $store.units.system === 'cm' }" @click="$store.units.setSystem('cm')" type="button">cm</button>
+      </div>
+    </div>
+
     <!-- Sleeve toggle: Short left, Long right -->
     <div class="sleeve-card">
       <p class="sleeve-card-label">Sleeve style</p>
@@ -828,63 +896,53 @@
       <div class="section-label">
         <div class="step-num">1</div>
         <h2>Gauge swatch</h2>
-        <div class="tooltip-wrap">
-          <button class="tooltip-trigger" type="button" aria-label="Help: gauge swatch">?</button>
-          <div class="tooltip-panel" role="tooltip">
-            <img src="images/stockinette-swatch.jpg" alt="Swatch example" class="tooltip-img" />
+        <div class="tooltip-wrap" x-data="{ open: false }" @click.outside="open = false">
+          <button class="tooltip-trigger" type="button" aria-label="Help: gauge swatch" @click="open = !open" :class="{ active: open }">?</button>
+          <div class="tooltip-panel" role="tooltip" x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" @click.stop>
+            <img src="images/stockinette-swatch.png" alt="Swatch example" class="tooltip-img" />
             <p class="tooltip-text">Knit a flat swatch in your main stitch pattern. Measure stitches and rows carefully after the swatch has rested.</p>
           </div>
         </div>
       </div>
-      <div class="helper-note">
-        Knit one flat swatch. Count stitches and rows, then measure its exact width and length (inches) after it has relaxed.
+      <div class="helper-note" x-data>
+        Knit one flat swatch. Count stitches and rows, then measure its exact width and length (<span x-text="$store.units.system === 'cm' ? 'centimetres' : 'inches'"></span>) after it has relaxed.
       </div>
       <div class="two-col">
         <div class="field"
-             x-data="numStepper({ id: 'st-stitches', value: 20, min: 1, step: 1, unit: '' })">
+             x-data="numStepper({ id: 'st-stitches', value: 20, min: 1, step: 1 })">
           <label for="st-stitches">Stitch count</label>
           <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
             <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
-            <div class="stepper-value-group">
-              <input type="number" id="st-stitches" x-model.number="value" :min="min" :step="step" />
-            </div>
+            <input type="number" id="st-stitches" x-model.number="value" :min="min" :step="step" />
             <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
           </div>
         </div>
         <div class="field"
-             x-data="numStepper({ id: 'st-swatch-width', value: 4, min: 0.1, step: 0.25, unit: 'in' })">
-          <label for="st-swatch-width">Swatch width</label>
+             x-data="numStepper({ value: 4, min: 0.1, isLength: true })">
+          <label for="st-swatch-width">Swatch width (<span x-text="$store.units.system"></span>)</label>
           <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
             <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
-            <div class="stepper-value-group">
-              <input type="number" id="st-swatch-width" x-model.number="value" :min="min" :step="step" />
-              <span class="stepper-unit">in</span>
-            </div>
+            <input type="number" id="st-swatch-width" x-model.number="value" :min="min" :step="step" />
             <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
           </div>
         </div>
       </div>
       <div class="two-col">
         <div class="field"
-             x-data="numStepper({ id: 'st-rows', value: 25, min: 1, step: 1, unit: '' })">
+             x-data="numStepper({ id: 'st-rows', value: 25, min: 1, step: 1 })">
           <label for="st-rows">Row count</label>
           <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
             <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
-            <div class="stepper-value-group">
-              <input type="number" id="st-rows" x-model.number="value" :min="min" :step="step" />
-            </div>
+            <input type="number" id="st-rows" x-model.number="value" :min="min" :step="step" />
             <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
           </div>
         </div>
         <div class="field"
-             x-data="numStepper({ id: 'st-swatch-length', value: 4, min: 0.1, step: 0.25, unit: 'in' })">
-          <label for="st-swatch-length">Swatch length</label>
+             x-data="numStepper({ value: 4, min: 0.1, isLength: true })">
+          <label for="st-swatch-length">Swatch length (<span x-text="$store.units.system"></span>)</label>
           <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
             <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
-            <div class="stepper-value-group">
-              <input type="number" id="st-swatch-length" x-model.number="value" :min="min" :step="step" />
-              <span class="stepper-unit">in</span>
-            </div>
+            <input type="number" id="st-swatch-length" x-model.number="value" :min="min" :step="step" />
             <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
           </div>
         </div>
@@ -896,40 +954,34 @@
       <div class="section-label">
         <div class="step-num">2</div>
         <h2>Body measurements</h2>
-        <div class="tooltip-wrap">
-          <button class="tooltip-trigger" type="button" aria-label="Help: body measurements">?</button>
-          <div class="tooltip-panel" role="tooltip">
-            <img src="images/body-measurements.jpg" alt="Body measurement guide" class="tooltip-img" />
+        <div class="tooltip-wrap" x-data="{ open: false }" @click.outside="open = false">
+          <button class="tooltip-trigger" type="button" aria-label="Help: body measurements" @click="open = !open" :class="{ active: open }">?</button>
+          <div class="tooltip-panel tooltip-panel--lg" role="tooltip" x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" @click.stop>
+            <img src="images/body-measurements.png" alt="Body measurement guide" class="tooltip-img" />
             <p class="tooltip-text">Measure snugly but not tightly, in inches. Hold the tape straight for vertical measurements.</p>
           </div>
         </div>
       </div>
-      <div class="helper-note">
-        All measurements in <strong>inches</strong>. Circumferences: measure snugly. Lengths: hold the tape straight, not following the body's curve.
+      <div class="helper-note" x-data>
+        All measurements in <strong x-text="$store.units.system === 'cm' ? 'centimetres' : 'inches'"></strong>. Circumferences: measure snugly. Lengths: hold the tape straight, not following the body's curve.
       </div>
 
       <div class="meas-grid">
         <div class="field"
-             x-data="numStepper({ id: 'waist', value: 27, min: 10, step: 0.25, unit: 'in' })">
-          <label for="waist">Waist circumference</label>
+             x-data="numStepper({ value: 27, min: 10, isLength: true })">
+          <label for="waist">Waist circumference (<span x-text="$store.units.system"></span>)</label>
           <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
             <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
-            <div class="stepper-value-group">
-              <input type="number" id="waist" x-model.number="value" :min="min" :step="step" />
-              <span class="stepper-unit">in</span>
-            </div>
+            <input type="number" id="waist" x-model.number="value" :min="min" :step="step" />
             <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
           </div>
         </div>
         <div class="field"
-             x-data="numStepper({ id: 'bust', value: 32, min: 10, step: 0.25, unit: 'in' })">
-          <label for="bust">Bust circumference</label>
+             x-data="numStepper({ value: 32, min: 10, isLength: true })">
+          <label for="bust">Bust circumference (<span x-text="$store.units.system"></span>)</label>
           <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
             <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
-            <div class="stepper-value-group">
-              <input type="number" id="bust" x-model.number="value" :min="min" :step="step" />
-              <span class="stepper-unit">in</span>
-            </div>
+            <input type="number" id="bust" x-model.number="value" :min="min" :step="step" />
             <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
           </div>
         </div>
@@ -937,24 +989,20 @@
 
       <div class="meas-grid">
         <div class="field"
-             x-data="numStepper({ id: 'waist-underbust', value: 5, min: 0.5, step: 0.25 })">
-          <label for="waist-underbust">Cast to underbust</label>
+             x-data="numStepper({ value: 5, min: 0.5, isLength: true })">
+          <label for="waist-underbust">Cast to underbust (<span x-text="$store.units.system"></span>)</label>
           <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
             <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
-            <div class="stepper-divider"></div>
             <input type="number" id="waist-underbust" x-model.number="value" :min="min" :step="step" />
-            <div class="stepper-divider"></div>
             <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
           </div>
         </div>
         <div class="field"
-             x-data="numStepper({ id: 'underbust-shoulder', value: 10, min: 0.5, step: 0.25 })">
-          <label for="underbust-shoulder">Underbust to shoulder</label>
+             x-data="numStepper({ value: 10, min: 0.5, isLength: true })">
+          <label for="underbust-shoulder">Underbust to shoulder (<span x-text="$store.units.system"></span>)</label>
           <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
             <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
-            <div class="stepper-divider"></div>
             <input type="number" id="underbust-shoulder" x-model.number="value" :min="min" :step="step" />
-            <div class="stepper-divider"></div>
             <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
           </div>
         </div>
@@ -962,24 +1010,20 @@
 
       <div class="meas-grid">
         <div class="field"
-             x-data="numStepper({ id: 'underbust-bust', value: 4, min: 0.5, step: 0.25 })">
-          <label for="underbust-bust">Underbust to top of bust</label>
+             x-data="numStepper({ value: 4, min: 0.5, isLength: true })">
+          <label for="underbust-bust">Underbust to top of bust (<span x-text="$store.units.system"></span>)</label>
           <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
             <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
-            <div class="stepper-divider"></div>
             <input type="number" id="underbust-bust" x-model.number="value" :min="min" :step="step" />
-            <div class="stepper-divider"></div>
             <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
           </div>
         </div>
         <div class="field"
-             x-data="numStepper({ id: 'bicep', value: 13, min: 5, step: 0.25 })">
-          <label for="bicep">Bicep circumference</label>
+             x-data="numStepper({ value: 13, min: 5, isLength: true })">
+          <label for="bicep">Bicep circumference (<span x-text="$store.units.system"></span>)</label>
           <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
             <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
-            <div class="stepper-divider"></div>
             <input type="number" id="bicep" x-model.number="value" :min="min" :step="step" />
-            <div class="stepper-divider"></div>
             <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
           </div>
         </div>
@@ -988,16 +1032,14 @@
       <!-- Arm length — only shown when long sleeve is active -->
       <div class="long-sleeve-only" id="arm-length-wrap" style="display:none;">
         <div class="field"
-             x-data="numStepper({ id: 'arm-length', value: 24, min: 1, step: 0.25 })">
-          <label for="arm-length">Arm length</label>
+             x-data="numStepper({ value: 24, min: 1, isLength: true })">
+          <label for="arm-length">Arm length (<span x-text="$store.units.system"></span>)</label>
           <div class="stepper-wrap" :class="{ 'error-wrap': hasError }">
             <button class="stepper-btn" @click="decrement" type="button" aria-label="Decrease">−</button>
-            <div class="stepper-divider"></div>
             <input type="number" id="arm-length" x-model.number="value" :min="min" :step="step" />
-            <div class="stepper-divider"></div>
             <button class="stepper-btn" @click="increment" type="button" aria-label="Increase">+</button>
           </div>
-          <span class="field-hint">top of arm to wrist (long sleeve only, in)</span>
+          <span class="field-hint">top of arm to wrist, long sleeve only</span>
         </div>
       </div>
 
@@ -1026,7 +1068,7 @@
       </div>
       <img
         id="preview-img"
-        src="images/short-sleeve-placeholder.jpg"
+        src="images/short-sleeve-banner.png"
         alt="Short sleeve garment preview"
         class="preview-img"
         style="opacity:0"
@@ -1037,6 +1079,11 @@
 
     <!-- Pattern output (hidden until calculated) -->
     <div class="pattern-output-wrap" id="pattern-output-wrap">
+
+      <!-- Banner shown only when printing -->
+      <div class="print-banner">
+        <img id="print-banner-img" src="images/short-sleeve-banner.png" alt="Garment preview" />
+      </div>
 
       <p class="output-section-title">Generated pattern</p>
 
@@ -1110,25 +1157,47 @@
 <script>
   /* ── Alpine.js: numStepper component ──────────────────────────── */
   document.addEventListener('alpine:init', () => {
-    Alpine.data('numStepper', ({ id, value, min = 0, step = 1, max = Infinity, unit = '' }) => ({
+    Alpine.store('units', {
+      system: 'in',
+      setSystem(s) { this.system = s; }
+    });
+
+    Alpine.data('numStepper', ({ value, min = 0, isLength = false, max = Infinity }) => ({
       value,
-      min,
-      step,
+      minIn: min,
+      isLength,
       max,
-      unit,
       hasError: false,
 
+      get step() {
+        return this.isLength && this.$store.units.system === 'cm' ? 1 : (this.isLength ? 0.5 : 1);
+      },
+
+      get min() {
+        return this.isLength && this.$store.units.system === 'cm'
+          ? Math.round(this.minIn * 2.54 * 10) / 10
+          : this.minIn;
+      },
+
+      init() {
+        this.$watch('$store.units.system', (next, prev) => {
+          if (!this.isLength) return;
+          this.value = next === 'cm'
+            ? Math.round(this.value * 2.54)
+            : Math.round(this.value / 2.54 * 2) / 2;
+        });
+      },
+
       increment() {
-        const next = Math.round((+this.value + this.step) * 10000) / 10000;
-        this.value = Math.min(this.max, next);
+        const n = Math.round((+this.value + this.step) * 100) / 100;
+        this.value = Math.min(this.max, n);
       },
 
       decrement() {
-        const next = Math.round((+this.value - this.step) * 10000) / 10000;
-        this.value = Math.max(this.min, next);
+        const n = Math.round((+this.value - this.step) * 100) / 100;
+        this.value = Math.max(this.min, n);
       },
 
-      /* Called by markErr / clearErrors via DOM */
       setError(state) { this.hasError = state; }
     }));
   });
@@ -1175,8 +1244,8 @@
 
   /* ── Sleeve toggle ─────────────────────────────────────────────── */
   const sleeveImages = {
-    short: { src: 'images/short-sleeve-placeholder.jpg', label: 'Short sleeve' },
-    long:  { src: 'images/long-sleeve-placeholder.jpg',  label: 'Long sleeve'  },
+    short: { src: 'images/short-sleeve-banner.png', label: 'Short sleeve' },
+    long:  { src: 'images/long-sleeve-banner.png',  label: 'Long sleeve'  },
   };
 
   document.querySelectorAll('.sleeve-btn').forEach(btn => {
@@ -1192,6 +1261,7 @@
       img.src = d.src;
       document.getElementById('preview-badge').textContent             = d.label;
       document.getElementById('preview-placeholder-label').textContent = d.label;
+      document.getElementById('print-banner-img').src                  = d.src;
 
       document.getElementById('arm-length-wrap').style.display = style === 'long' ? 'block' : 'none';
 
@@ -1208,16 +1278,19 @@
   function validate() {
     const errors = [];
     clearErrors();
+    const us = Alpine.store('units').system;
+    const toIn = v => us === 'cm' ? v / 2.54 : v;
+    const minWaistLabel = us === 'cm' ? '5 cm' : '2 in';
 
     const required = [
       ['st-stitches',       'Stitch count'],
       ['st-swatch-width',   'Swatch width'],
       ['st-rows',           'Row count'],
       ['st-swatch-length',  'Swatch length'],
-      ['waist-underbust',   'R — Cast to underbust'],
-      ['underbust-shoulder','U — Underbust to shoulder'],
-      ['underbust-bust',    'F — Underbust to top of bust'],
-      ['bicep',             'G — Bicep circumference'],
+      ['waist-underbust',   'Cast to underbust'],
+      ['underbust-shoulder','Underbust to shoulder'],
+      ['underbust-bust',    'Underbust to top of bust'],
+      ['bicep',             'Bicep circumference'],
     ];
 
     required.forEach(([id, label]) => {
@@ -1225,19 +1298,19 @@
       if (isNaN(v) || v <= 0) { errors.push(`${label} must be a positive number.`); markErr(id); }
     });
 
-    const C = getVal('waist');
+    const C = toIn(getVal('waist'));
     if (isNaN(C) || C <= 2) {
-      errors.push('C (waist circumference) must be greater than 2 inches.'); markErr('waist');
+      errors.push(`Waist circumference must be greater than ${minWaistLabel}.`); markErr('waist');
     }
 
-    const E = getVal('bust');
+    const E = toIn(getVal('bust'));
     if (isNaN(E) || E <= 2) {
-      errors.push('E (bust circumference) must be greater than 2 inches.'); markErr('bust');
+      errors.push(`Bust circumference must be greater than ${minWaistLabel}.`); markErr('bust');
     }
 
     const F = getVal('underbust-bust'), U = getVal('underbust-shoulder');
     if (!isNaN(F) && !isNaN(U) && F >= U) {
-      errors.push('F (underbust to top of bust) must be less than U (underbust to shoulder).');
+      errors.push('Underbust to top of bust must be less than underbust to shoulder.');
       markErr('underbust-bust'); markErr('underbust-shoulder');
     }
 
@@ -1245,7 +1318,7 @@
     if (isLong) {
       const L = getVal('arm-length');
       if (isNaN(L) || L <= 0) {
-        errors.push('L — Arm length is required for long sleeve.'); markErr('arm-length');
+        errors.push('Arm length is required for long sleeve.'); markErr('arm-length');
       }
     }
 
@@ -1316,18 +1389,21 @@
     }
     banner.style.display = 'none';
 
+    const us    = Alpine.store('units').system;
+    const toIn  = v => us === 'cm' ? v / 2.54 : v;
+
     const st_stitches = getVal('st-stitches');
-    const st_width    = getVal('st-swatch-width');
+    const st_width    = toIn(getVal('st-swatch-width'));
     const st_rows     = getVal('st-rows');
-    const st_length   = getVal('st-swatch-length');
-    const C           = getVal('waist');
-    const E           = getVal('bust');
-    const R           = getVal('waist-underbust');
-    const U           = getVal('underbust-shoulder');
-    const F           = getVal('underbust-bust');
-    const G           = getVal('bicep');
+    const st_length   = toIn(getVal('st-swatch-length'));
+    const C           = toIn(getVal('waist'));
+    const E           = toIn(getVal('bust'));
+    const R           = toIn(getVal('waist-underbust'));
+    const U           = toIn(getVal('underbust-shoulder'));
+    const F           = toIn(getVal('underbust-bust'));
+    const G           = toIn(getVal('bicep'));
     const isLong      = document.querySelector('.sleeve-btn.active').dataset.style === 'long';
-    const L           = isLong ? getVal('arm-length') : null;
+    const L           = isLong ? toIn(getVal('arm-length')) : null;
 
     const A1 = st_stitches / st_width;
     const B1 = st_rows     / st_length;

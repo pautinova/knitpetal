@@ -1412,11 +1412,21 @@
     const upper_body_sts = Math.round(((E - 2) * A1) / 2);
     const stitch_difference = upper_body_sts - cast_sts;
 
+    // Round to nearest even, away from zero — works for both positive and negative.
+    // e.g. +5 → +6, −5 → −6, +4 → +4, −4 → −4
     const adjusted_stitch_difference =
-      stitch_difference % 2 !== 0 ? stitch_difference + 1 : stitch_difference;
+      Math.abs(stitch_difference) % 2 !== 0
+        ? stitch_difference + Math.sign(stitch_difference)
+        : stitch_difference;
 
-    const increase_per_side           = adjusted_stitch_difference / 2;
-    const rows_used_for_bust_increases = increase_per_side * 2;
+    const increase_per_side            = adjusted_stitch_difference / 2;
+    // Rows used is always positive — absolute shaping amount × interval
+    const rows_used_for_bust_increases = Math.abs(increase_per_side) * 2;
+
+    // Convenience flags used throughout pattern text
+    const isDecrease  = stitch_difference < 0;
+    const shapingAbs  = Math.abs(adjusted_stitch_difference); // total sts to shape
+    const perSideAbs  = Math.abs(increase_per_side);           // sts per edge
 
     const cast_to_underbust_rows     = Math.round(R * B1);
     const underbust_to_shoulder_rows = Math.round(U * B1);
@@ -1438,8 +1448,8 @@
     if (remaining_straight_rows < 0) {
       postErrors.push(
         `Remaining straight rows is ${remaining_straight_rows} (negative). ` +
-        `The bust increase section (${rows_used_for_bust_increases} rows) exceeds the available upper body height. ` +
-        `Try increasing U, or check your gauge and measurements.`
+        `The bust shaping section (${rows_used_for_bust_increases} rows) exceeds the available upper body height. ` +
+        `Try increasing the underbust-to-shoulder measurement, or check your gauge and measurements.`
       );
     }
 
@@ -1477,15 +1487,18 @@
       ];
     } else {
       const roundingNote = adjusted_stitch_difference !== stitch_difference
-        ? ` The raw stitch difference was ${stitch_difference} (odd) — automatically rounded up to ${adjusted_stitch_difference} to keep both sides even.`
+        ? ` The raw stitch difference was ${stitch_difference} — automatically adjusted to ${adjusted_stitch_difference} to keep both sides even.`
         : '';
+      const shapingVerb   = isDecrease ? 'Decrease' : 'Increase';
+      const shapingAction = isDecrease ? 'removing' : 'adding';
+      const shapingLabel  = isDecrease ? 'decrease' : 'increase';
 
       backSteps = [
         { text: `Cast on <strong>${cast_sts} stitches</strong>. Knit 4–6 rows using waste yarn in a contrasting colour.`, note: `The waste yarn rows are removed later to expose a clean cast-on edge.` },
         { text: `Knit 1 row with a smooth ravel cord to separate the waste yarn from your main project.` },
         { text: `Switch to project yarn, set the machine to your desired tension, and knit <strong>${cast_to_underbust_rows} rows</strong> straight.`, note: `This brings the piece from the waist up to the underbust. (R = ${R} in × B1 = ${B1.toFixed(2)} rows/in → ${cast_to_underbust_rows} rows.)` },
-        { text: `Increase for the bust by <strong>${adjusted_stitch_difference} stitches total</strong>, adding <strong>${increase_per_side} stitches on each side</strong>.`, note: `${roundingNote} Increase method and row spacing are at your discretion. <span class="assumption-tag">Assumption</span> This section uses approximately ${rows_used_for_bust_increases} rows (1 increase per side every 2 rows).` },
-        { text: `After the increase section is complete, knit <strong>${remaining_straight_rows} rows</strong> straight until the back panel reaches its full length.`, note: `Total: ${cast_to_underbust_rows} rows + ~${rows_used_for_bust_increases} increase rows + ${remaining_straight_rows} straight rows = ${total_rows} rows.` },
+        { text: `${shapingVerb} for the bust by <strong>${shapingAbs} stitches total</strong>, ${shapingAction} <strong>${perSideAbs} stitches on each side</strong>.`, note: `${roundingNote} ${shapingVerb} method and row spacing are at your discretion. <span class="assumption-tag">Assumption</span> This section uses approximately ${rows_used_for_bust_increases} rows (1 ${shapingLabel} per side every 2 rows).` },
+        { text: `After the shaping section is complete, knit <strong>${remaining_straight_rows} rows</strong> straight until the back panel reaches its full length.`, note: `Total: ${cast_to_underbust_rows} rows + ~${rows_used_for_bust_increases} shaping rows + ${remaining_straight_rows} straight rows = ${total_rows} rows.` },
         { text: `The back panel is complete. Leave stitches on hold or bind off depending on your chosen shoulder join method.` }
       ];
     }
@@ -1502,9 +1515,11 @@
       frontSteps.push({ text: `No bust shaping is needed — waist and bust stitch counts are equal (${cast_sts} stitches). Continue straight.` });
     } else {
       const roundingNote = adjusted_stitch_difference !== stitch_difference
-        ? ` (Raw difference was ${stitch_difference} — automatically adjusted to ${adjusted_stitch_difference} for even increases.)`
+        ? ` (Raw difference was ${stitch_difference} — automatically adjusted to ${adjusted_stitch_difference} for even shaping.)`
         : '';
-      frontSteps.push({ text: `Increase for the bust by <strong>${adjusted_stitch_difference} stitches total</strong>, adding <strong>${increase_per_side} stitches on each side</strong>.${roundingNote}`, note: `You now have ${upper_body_sts} stitches across. Matches the back panel shaping.` });
+      const shapingVerb   = isDecrease ? 'Decrease' : 'Increase';
+      const shapingAction = isDecrease ? 'removing'  : 'adding';
+      frontSteps.push({ text: `${shapingVerb} for the bust by <strong>${shapingAbs} stitches total</strong>, ${shapingAction} <strong>${perSideAbs} stitches on each side</strong>.${roundingNote}`, note: `You now have ${upper_body_sts} stitches across. Matches the back panel shaping.` });
     }
 
     if (extra_rows_to_top_of_bust > 0) {
@@ -1555,10 +1570,10 @@
       { key: 'upper_body_sts = ((E − 2) × A1) ÷ 2',               val: `((${E} − 2) × ${A1.toFixed(4)}) ÷ 2 = ${(((E-2)*A1)/2).toFixed(4)} → ${upper_body_sts} sts` },
       { key: 'stitch_difference = upper_body_sts − cast_sts',      val: `${upper_body_sts} − ${cast_sts} = ${stitch_difference}` },
       { div: true },
-      { head: 'Bust shaping (automatic even rounding)' },
-      { key: 'adjusted_stitch_difference',                          val: stitch_difference % 2 !== 0 ? `${stitch_difference} is odd → rounded up to ${adjusted_stitch_difference}` : `${stitch_difference} is even → no change` },
-      { key: 'increase_per_side = adjusted ÷ 2',                   val: `${adjusted_stitch_difference} ÷ 2 = ${increase_per_side} sts` },
-      { key: 'rows_used_for_bust_increases = increase_per_side × 2 [ASSUMPTION: 1 inc/side per 2 rows]', val: `${increase_per_side} × 2 = ${rows_used_for_bust_increases} rows` },
+      { head: `Bust shaping — ${isDecrease ? 'decreases' : 'increases'} (automatic even rounding)` },
+      { key: 'adjusted_stitch_difference',                          val: Math.abs(stitch_difference) % 2 !== 0 ? `${stitch_difference} is odd → adjusted to ${adjusted_stitch_difference}` : `${stitch_difference} is even → no change` },
+      { key: `${isDecrease ? 'decrease' : 'increase'}_per_side = adjusted ÷ 2`, val: `${adjusted_stitch_difference} ÷ 2 = ${increase_per_side} sts (${perSideAbs} per side)` },
+      { key: 'rows_used_for_shaping = |per_side| × 2 [ASSUMPTION: 1 per side every 2 rows]', val: `${perSideAbs} × 2 = ${rows_used_for_bust_increases} rows` },
       { div: true },
       { head: 'Row counts' },
       { key: 'cast_to_underbust_rows = R × B1',                    val: `${R} × ${B1.toFixed(4)} = ${(R*B1).toFixed(4)} → ${cast_to_underbust_rows} rows` },
